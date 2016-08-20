@@ -1,0 +1,18 @@
+{
+    "contents" : "library(stats)\nlibrary(tseries)\nlibrary(forecast)\n\n\njojo <- read.csv(\"jojo.csv\", quote = \" \", header = FALSE)\njojo_timeseries <- ts(jojo)\njojo_diff <- diff(jojo_timeseries)\n# since the data used has a time varying trend we use order of differencing to be 2\n\nadf.test(jojo_diff)\n# p-value significantly small\n\nBox.test(jojo_diff, type = \"Ljung-Box\")\nkpss.test(jojo_diff)\n\n\nacf(jojo_diff)\n\n# There is a sharp drop in lag 6 autocorrelation of the differenced time series \n#we can consider the the MA terms at 6\n\npacf(jojo_diff)\n# a sharp cutoff is seen at lag 6 for PACF, hence the Ar term can be considered at 6\n\n\njojo_fit_101 <- arima(jojo_timeseries,order = c(1,0,1), method = \"ML\")\npredicted_jojo <- predict(jojo_fit_101,11)\n\nplot(jojo_timeseries, xlim =c(1,100), ylim = c(0,30))\nlines(predicted_jojo$pred, col = \"blue\")\n\nlines(predicted_jojo$pred+predicted_jojo$se, col = \"red\")\nlines(predicted_jojo$pred-predicted_jojo$se, col = \"red\")\n\n",
+    "created" : 1455834521847.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "990189673",
+    "id" : "6FDB9311",
+    "lastKnownWriteTime" : 1456794637,
+    "path" : "~/Homework 2/question 1.R",
+    "project_path" : "question 1.R",
+    "properties" : {
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 1,
+    "source_on_save" : false,
+    "type" : "r_source"
+}

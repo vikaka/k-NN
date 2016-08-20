@@ -1,0 +1,25 @@
+{
+    "contents" : "",
+    "created" : 1456829524679.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "AA636B80",
+    "lastKnownWriteTime" : 7011605692497750387,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "cacheKey" : "71zvyrurw8",
+        "caption" : "fea",
+        "contentUrl" : "grid_resource/gridviewer.html?env=&obj=fea&cache_key=71zvyrurw8",
+        "displayedObservations" : 214,
+        "environment" : "",
+        "object" : "fea",
+        "totalObservations" : 214,
+        "variables" : 9
+    },
+    "relative_order" : 9,
+    "source_on_save" : false,
+    "type" : "r_dataframe"
+}

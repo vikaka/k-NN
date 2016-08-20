@@ -1,0 +1,18 @@
+{
+    "contents" : "\n\n# Question 2\n\nlibrary('dplyr')\nlibrary('class')\n\nglass <- read.csv(\"~/Homework 2/glass.data\", header=FALSE)\nhead(glass)\nstr(glass)\ncolnames(glass) <- c(\"Id Number\",\"RI\",\"Na\",\"Mg\",\"Al\",\"Si\",\"K\",\"Ca\",\"Ba\",\"Fe\",\"Type of glass\")\n\n## question a\n\nfor (i in 1:214)\n{\n  if(glass$'Type of glass'[i] <5)\n    {\n      glass$bi[i] <- 0\n    }\n  else\n    {\n    glass$bi[i] <- 1\n    }\n  i= i+1\n  \n}\n\n## question b\n\nfeatures <- glass[,-1]\nfeatures <- features[,-11]\nfeatures <- features[,-10]\nfea <- data.frame(features)\n\ny <- data.frame(glass$bi)\n## question C\n\ntrain_fea <- sample_frac(fea,0.8)\ntrain_y <- data.frame(y[as.numeric(rownames(train_fea)),])\n\ntrain_values <- as.numeric(rownames(train_fea))\n\ntest_fea <- fea[-train_values,]\ntest_y <- data.frame(y[as.numeric(rownames(test_fea)),])\n\n## question d\n\n# Retraining CL vector using cross validation for k= 5\n\ny_cv <- data.matrix(knn.cv(data.Matrix(train_fea),data.matrix(train_y), k = 5))\n\ncheck_test <-data.frame(knn(train_fea,test_fea,y_cv))\ncheck_test$a <- test_y\n\n## question e\n# making predictions for test\n\ncheck_test <-data.frame(knn(train_fea,test_fea,y_cv))\ncheck_test$a <- test_y\n\ncheck_test$knn.train_fea..test_fea..y_cv.<-data.frame(check_test$knn.train_fea..test_fea..y_cv.)\n\nfor (i in 1:43)\n{\n  if(check_test$knn.train_fea..test_fea..y_cv.[i,] == check_test$a[i,])\n  {\n    check_test$accuracy[i] <- 1\n  }\n  else\n  {\n    check_test$accuracy[i] <- 0\n  }\n  i= i+1\n  \n}\n\nsum(check_test$accuracy)/43\n\n",
+    "created" : 1456821155864.000,
+    "dirty" : true,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "4032839258",
+    "id" : "46BC0FBF",
+    "lastKnownWriteTime" : 0,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 9,
+    "source_on_save" : false,
+    "type" : "r_markdown"
+}

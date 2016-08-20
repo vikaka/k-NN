@@ -1,0 +1,166 @@
+---
+title: "bonus points"
+author: "Vishesh Kakarala"
+date: "March 1, 2016"
+output: html_document
+---
+#Bonus Points
+
+# to determine which predictors are good we can use linear modelling to determine their significance
+```{r}
+lm_multiple <- lm(glass$bi~glass$RI +glass$Na +glass$Mg+glass$Al+glass$Si+glass$K+glass$Ca+glass$Ba+glass$Fe+glass$`Type of glass`)
+
+summary(lm_multiple)
+```
+# from the analysis of the summary we find that the variables Na, Al, SI and K have significant influence on the response vector
+
+```{r}
+
+features <- glass[,-1]
+features <- features[,-11]
+features <- features[,-10]
+features <- features[,-1]
+features <- features[,-2]
+features <- features[,-5]
+features <- features[,-5]
+features <- features[,-5]
+
+colnames(features)
+# only the significant varibales are used in the feature matrix
+
+fea_sig <- data.frame(features)
+# y is the response vector
+
+y_sig <- data.frame(glass$bi)
+```
+
+#### The rest of the process is followed as above
+
+training - 80% 
+testing - 30%
+we need a larger training data set for better model fit  
+
+```{r}
+#sample is taken from the original data and the corresponding respone variables are also split
+train_fea_sig <- sample_frac(fea_sig,0.8)
+train_y_sig <- data.matrix(y[as.numeric(rownames(train_fea_sig)),])
+
+train_values_sig <- as.numeric(rownames(train_fea_sig))
+
+test_fea_sig <- fea[-train_values_sig,]
+test_y_sig <- data.matrix(y[as.numeric(rownames(test_fea_sig)),])
+
+
+train_fea_sig <- data.matrix(train_fea_sig)
+
+test_fea_sig <- data.matrix(test_fea_sig)
+
+#the training and test data is stored in matrix form
+```
+
+
+```{r}
+# From the class package, we use knn.cv to validate the exisitng response variables 
+# kNN of order 5 is used
+
+fit_knn_sig <- knn.cv(train_fea_sig,train_y_sig,k= 5)
+
+# the output is used as the new response varible and is used to predict test values
+```
+
+
+
+```{r}
+# Using the testing set and the training data predictions are made 
+
+check_test_sig <-data.frame(knn(train_fea_sig,test_fea_sig,train_y_sig, k= 5))
+check_test_sig$a <- test_y_sig
+
+colnames(check_test_sig) <- c("Model output","original data")
+
+
+check_test_sig$`Model output`<-data.frame(check_test_sig$`Model output`)
+
+for (i in 1:43)
+{
+  if(check_test_sig$`Model output`[i,] == check_test_sig$`original data`[i,])
+  {
+    check_test_sig$accuracy[i] <- 1
+  }
+  else
+  {
+    check_test_sig$accuracy[i] <- 0
+  }
+  i= i+1
+  
+}
+
+sum(check_test$accuracy)/43
+
+# accuracy of the kNN model of order 5 is 90%
+
+```
+
+
+
+```{r}
+
+#to compute the accuracy value for various levels of kNN
+# we must first initialise a storage data frame
+
+accuracy_test_4 <- data.frame(5:25)
+
+
+for(j in 1:20)
+{
+  check_test_sig <-data.frame(knn(train_fea_sig,test_fea_sig,fit_knn_sig, k= j+4))
+  check_test$a <- test_y
+
+  colnames(check_test_sig) <- c("Model output","original data")
+
+  check_test_sig$`Model output`<-data.frame(check_test_sig$`Model output`)
+
+  for (i in 1:43)
+    {
+      if(check_test_sig$`Model output`[i,] == check_test_sig$`original data`[i,])
+        {
+          check_test_sig$accuracy[i] <- 1
+        }
+      else
+        {
+          check_test_sig$accuracy[i] <- 0
+        }
+    i= i+1
+  
+    }
+
+  accuracy_test_4$k_value[j] <- j+4
+  accuracy_test_4$Accuracy[j] <- sum(check_test$accuracy)/43
+  
+
+}
+accuracy_test_4 <- accuracy_test_4[-1] 
+accuracy_test_4 <- accuracy_test_4[-21,] 
+
+# the data frame accuracy_test_4 contains the accuracy values for a reasonable range of K values
+```
+
+
+```{r}
+plot(accuracy_test_4$k_value,accuracy_test_4$Accuracy, type = "l")
+```
+
+Optimal value for k is 12 or 14  
+
+
+By analysing the test class we can calculate the testing accuracy
+```{r}
+table(test_y_sig)
+```
+Here we can see that out of the 43 values there are 32 0's and 11 1's, hence to calculate null accuracy we get.  
+
+```{r}
+32/43
+```
+
+Thus null accuracy is at 74%.    

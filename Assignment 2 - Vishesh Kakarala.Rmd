@@ -1,0 +1,501 @@
+---
+title: "Assignment 2"
+author: "Vishesh Kakarala"
+date: "February 29, 2016"
+output: html_document
+---
+```{r}
+library('stats')
+library('tseries')
+library('forecast')
+library('rms')
+```
+
+# Question 1
+
+## part A
+```{r}
+jojo <- read.csv("jojo.csv", quote = " ", header = FALSE)
+
+# to remove seasonality from Time series data we use ts()
+
+jojo_timeseries <- ts(jojo)
+
+acf(jojo_timeseries, main="ACF of time series")
+```
+
+The ACF plot show strong correlation, the auto correlations are very strong, positive and decay slowly
+Now we difference the Data  
+
+```{r}
+jojo_diff <- diff(jojo_timeseries)
+
+plot(jojo_diff, main = "Diff of time series")
+abline(mean(jojo_diff),b=0)
+
+acf(jojo_diff,30,main = "ACF of Diff time series")
+
+
+```
+
+The auto correlation function of the differenced data is plotted to check if stationarity is reduced.
+
+The ACF decays to zero and hence difference of order one is sufficient for the model
+
+Test for Stationary time series
+
+```{r}
+Box.test(jojo_diff, type = "Ljung-Box")
+```
+
+The p- value is <1 hence the function is stationary.
+
+## Question B
+
+### Now we analyze the stationary time series to examine the ACF and PACF
+
+
+```{r}
+acf(jojo_diff, xlab = "1 lag = 4 months or 1 Quarter",30, main = "ACF analysis for MA order")
+```
+
+```{r}
+pacf(jojo_diff,xlab = "1 lag = 4 months or 1 Quarter", 30, main = "ACF analysis for AR order")
+```
+
+From the plots we can see that ACF shows a damping effect with significant spikes for 5 lag values, hence we can suggest an MA model of the order 5
+
+when we look at the PACF, it shows PACF with 3 significant lags hence a AR model of order 3 can be considered 
+
+An ARMA model of the order ARMA(3,5) where p = 3 and q = 5 can be implemented.
+
+## Question C
+
+for ARIMA model specifiction
+The time series is differenced once, hence d = 1
+p = 3 & q= 5
+
+```{r}
+jojo_arima <- arima(jojo_timeseries,order = c(3,1,5), method = "ML")
+jojo_arima
+```
+
+Here p= 3, q= 3 and d = 1  
+We can  try The arima estimates for different values,  
+
+```{r}
+arima(jojo_timeseries,order = c(1,1,1), method = "ML")
+arima(jojo_timeseries,order = c(0,1,2))
+arima(jojo_timeseries,order = c(2,1,1))
+```
+
+## question D
+
+
+The diagnostic plot of the fitted time series model is  
+
+```{r}
+tsdiag(jojo_arima)
+```
+
+The p - values from the Ljung-Box test are all <1 hence the residuals are stationary
+
+## Question E
+
+```{r}
+#predicting values for ARIMA model wth parameters ARIMA(1,0,1)
+
+jojo_fit_101 <- arima(jojo_timeseries,order = c(1,0,1), method = "ML")
+predicted_jojo <- predict(jojo_fit_101,11)
+
+#predicting values foe ARIMA model with parameters ARIMA(3,1,5) as deduced from the functions above
+
+jojo_fit_315 <- arima(jojo_timeseries,order = c(3,1,5), method = "ML")
+predicted_jojo_315 <- predict(jojo_fit_315,11)
+
+
+```
+
+
+## Question F
+
+### Plotting the result with confidence intervals
+
+```{r}
+
+# plotting predicted values for ARIMA(1,0,1)
+plot(jojo_timeseries, xlim =c(1,100), ylim = c(0,30))
+lines(predicted_jojo$pred, col = "blue")
+
+lines(predicted_jojo$pred+predicted_jojo$se, col = "red")
+lines(predicted_jojo$pred-predicted_jojo$se, col = "red")
+
+#plotting predicted values for ARIMA(3,1,5)
+frame()
+plot(jojo_timeseries, xlim =c(1,100), ylim = c(0,30))
+lines(predicted_jojo_315$pred, col = "blue")
+
+lines(predicted_jojo_315$pred+predicted_jojo_315$se, col = "red")
+lines(predicted_jojo_315$pred-predicted_jojo_315$se, col = "red")
+
+
+```
+
+
+
+
+# Question 2
+
+
+```{r}
+library('dplyr')
+library('class')
+
+glass <- read.csv("~/Homework 2/glass.data", header=FALSE)
+head(glass)
+str(glass)
+colnames(glass) <- c("Id Number","RI","Na","Mg","Al","Si","K","Ca","Ba","Fe","Type of glass")
+```
+## Question A
+
+```{r}
+# for loop to creat data frame column "bi"
+
+for (i in 1:214)
+{
+  if(glass$'Type of glass'[i] <5)
+    {
+      glass$bi[i] <- 0
+    }
+  else
+    {
+    glass$bi[i] <- 1
+    }
+  i= i+1
+  
+}
+```
+
+## Question B
+```{r}
+
+features <- glass[,-1]
+features <- features[,-11]
+features <- features[,-10]
+# to create the feature matrix the identifier,class type and "bi"" columns are dropped
+
+fea <- data.frame(features)
+# y is the response vector
+
+y <- data.frame(glass$bi)
+```
+
+## Question C
+
+Training - 80%  
+Testing - 20%  
+We need a larger training data set to get a best fit model for prediction.    
+
+```{r}
+#sample is taken from the original data and the corresponding respone variables are also split
+set.seed(420)
+
+train_fea <- sample_frac(fea,0.8)
+train_y <- data.matrix(y[as.numeric(rownames(train_fea)),])
+
+train_values <- as.numeric(rownames(train_fea))
+
+test_fea <- fea[-train_values,]
+test_y <- data.matrix(y[as.numeric(rownames(test_fea)),])
+
+
+train_fea <- data.matrix(train_fea)
+
+test_fea <- data.matrix(test_fea)
+
+#the training and test data is stored in matrix form
+```
+
+## Question D
+```{r}
+# From the class package, we use knn.cv to validate the exisitng response variables 
+# kNN of order 5 is used
+
+fit_knn <- knn.cv(train_fea,train_y,k= 5)
+
+# the output is used as the new response varible and is used to predict test values
+```
+
+## Question E
+
+```{r}
+# Using the testing set and the training data predictions are made 
+
+check_test <-data.frame(knn(train_fea,test_fea,fit_knn, k= 5))
+check_test$a <- test_y
+
+colnames(check_test) <- c("Model output","original data")
+
+
+check_test$`Model output`<-data.frame(check_test$`Model output`)
+
+for (i in 1:43)
+{
+  if(check_test$`Model output`[i,] == check_test$`original data`[i,])
+  {
+    check_test$accuracy[i] <- 1
+  }
+  else
+  {
+    check_test$accuracy[i] <- 0
+  }
+  i= i+1
+  
+}
+```
+**Accuracy of the kNN model of order 5 is **
+```{r}
+
+(sum(check_test$accuracy)/43)*100
+
+```
+
+## Question F
+
+```{r}
+
+#to compute the accuracy value for various levels of kNN
+# we must first initialise a storage data frame
+
+accuracy_test <- data.frame(5:25)
+
+
+for(j in 1:20)
+{
+  check_test <-data.frame(knn(train_fea,test_fea,fit_knn, k= j+4))
+  check_test$a <- test_y
+
+  colnames(check_test) <- c("Model output","original data")
+
+  check_test$`Model output`<-data.frame(check_test$`Model output`)
+
+  for (i in 1:43)
+    {
+      if(check_test$`Model output`[i,] == check_test$`original data`[i,])
+        {
+          check_test$accuracy[i] <- 1
+        }
+      else
+        {
+          check_test$accuracy[i] <- 0
+        }
+    i= i+1
+  
+    }
+
+  accuracy_test$k_value[j] <- j+4
+  accuracy_test$Accuracy[j] <- sum(check_test$accuracy)/43
+  
+
+}
+accuracy_test <- accuracy_test[-1] 
+accuracy_test <- accuracy_test[-21,] 
+
+# the data frame accuracy_test contains the accuracy values for a reasonable range of K values
+```
+
+## Question G
+
+```{r}
+plot(accuracy_test$k_value,accuracy_test$Accuracy, type = "l")
+```
+
+Optimal value for k is below 10
+
+## Question H
+
+By analysing the test class we can calculate the testing accuracy
+```{r}
+table(test_y)
+```
+Here we can see that out of the 43 values how many 0's and 1's are there, hence to calculate null accuracy we get.  
+ 
+```{r}
+(as.vector(table(test_y))[1])/43*100
+```
+
+
+#Bonus Points
+
+# To determine which predictors are good, we can use linear modelling to determine their significance
+```{r}
+lm_multiple <- lm(glass$bi~glass$RI +glass$Na +glass$Mg+glass$Al+glass$Si+glass$K+glass$Ca+glass$Ba+glass$Fe+glass$`Type of glass`)
+
+summary(lm_multiple)
+```
+# from the analysis of the summary we find that the varia bles Na, Al, SI and K have significant influence on the response vector
+
+```{r}
+
+features <- glass[,-1]
+features <- features[,-11]
+features <- features[,-10]
+features <- features[,-1]
+features <- features[,-2]
+features <- features[,-5]
+features <- features[,-5]
+features <- features[,-5]
+
+colnames(features)
+# only the significant varibales are used in the feature matrix
+
+fea_sig <- data.frame(features)
+# y is the response vector
+
+y_sig <- data.frame(glass$bi)
+
+# normalizing the significant 4 variables for better kNN estimation
+
+fea_sig$Na <-(fea_sig$Na - min(fea_sig$Na))/(max(fea_sig$Na)-min(fea_sig$Na))
+fea_sig$Al <-(fea_sig$Al - min(fea_sig$Al))/(max(fea_sig$Al)-min(fea_sig$Al))
+fea_sig$Si <-(fea_sig$Si - min(fea_sig$Si))/(max(fea_sig$Si)-min(fea_sig$Si))
+fea_sig$K <-(fea_sig$K - min(fea_sig$K))/(max(fea_sig$K)-min(fea_sig$K))
+
+
+
+
+
+
+```
+
+#### The rest of the process is followed as above
+
+
+```{r}
+#sample is taken from the original data and the corresponding respone variables are also split
+set.seed(300)
+
+train_fea_sig <- sample_frac(fea_sig,0.8)
+train_y_sig <- data.matrix(y[as.numeric(rownames(train_fea_sig)),])
+
+train_values_sig <- as.numeric(rownames(train_fea_sig))
+
+test_fea_sig <- fea_sig[-train_values_sig,]
+test_y_sig <- data.matrix(y[as.numeric(rownames(test_fea_sig)),])
+
+
+train_fea_sig <- data.matrix(train_fea_sig)
+
+test_fea_sig <- data.matrix(test_fea_sig)
+
+#the training and test data is stored in matrix form
+```
+
+
+```{r}
+# From the class package, we use knn.cv to validate the exisitng response variables 
+# kNN of order 5 is used
+
+fit_knn_sig <- knn.cv(train_fea_sig,train_y_sig,k= 5)
+
+# the output is used as the new response varible and is used to predict test values
+```
+
+
+
+```{r}
+# Using the testing set and the training data predictions are made 
+
+check_test_sig <-data.frame(knn(train_fea_sig,test_fea_sig,fit_knn_sig, k= 5))
+check_test_sig$a <- test_y_sig
+
+colnames(check_test_sig) <- c("Model output","original data")
+
+
+check_test_sig$`Model output`<-data.frame(check_test_sig$`Model output`)
+
+for (i in 1:43)
+{
+  if(check_test_sig$`Model output`[i,] == check_test_sig$`original data`[i,])
+  {
+    check_test_sig$accuracy[i] <- 1
+  }
+  else
+  {
+    check_test_sig$accuracy[i] <- 0
+  }
+  i= i+1
+  
+}
+```
+**accuracy of the kNN model of order 5 is **
+```{r}
+(sum(check_test_sig$accuracy)/43)*100
+
+
+
+```
+
+
+
+```{r}
+
+#to compute the accuracy value for various levels of kNN
+# we must first initialise a storage data frame
+
+accuracy_test_4 <- data.frame(5:25)
+
+
+for(j in 1:20)
+{
+  check_test_sig <-data.frame(knn(train_fea_sig,test_fea_sig,fit_knn_sig, k= j+4))
+  check_test_sig$a <- test_y
+
+  colnames(check_test_sig) <- c("Model output","original data")
+
+  check_test_sig$`Model output`<-data.frame(check_test_sig$`Model output`)
+
+  for (i in 1:43)
+    {
+      if(check_test_sig$`Model output`[i,] == check_test_sig$`original data`[i,])
+        {
+          check_test_sig$accuracy[i] <- 1
+        }
+      else
+        {
+          check_test_sig$accuracy[i] <- 0
+        }
+    i= i+1
+  
+    }
+
+  accuracy_test_4$k_value[j] <- j+4
+  accuracy_test_4$Accuracy[j] <- sum(check_test_sig$accuracy)/43
+  
+
+}
+accuracy_test_4 <- accuracy_test_4[-1] 
+accuracy_test_4 <- accuracy_test_4[-21,] 
+
+# the data frame accuracy_test_4 contains the accuracy values for a reasonable range of K values
+```
+
+
+```{r}
+plot(accuracy_test_4$k_value,accuracy_test_4$Accuracy, type = "l")
+```
+
+Optimal value for k is between 5 and 8
+
+
+By analysing the test class we can calculate the testing accuracy
+```{r}
+table(test_y_sig)
+```
+Here we can see that out of the 43 values how many 0's and 1's are there, hence to calculate null accuracy we get.  
+
+```{r}
+ (as.vector(table(test_y_sig))[1]/43)*100
+```
+
+

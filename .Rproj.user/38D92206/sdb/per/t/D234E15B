@@ -1,0 +1,25 @@
+{
+    "contents" : "",
+    "created" : 1456501365865.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "D234E15B",
+    "lastKnownWriteTime" : 7011605692497750387,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "cacheKey" : "yj8vx61qzt",
+        "caption" : "glass",
+        "contentUrl" : "grid_resource/gridviewer.html?env=&obj=glass&cache_key=yj8vx61qzt",
+        "displayedObservations" : "214",
+        "environment" : "",
+        "object" : "glass",
+        "totalObservations" : "214",
+        "variables" : "12"
+    },
+    "relative_order" : 3,
+    "source_on_save" : false,
+    "type" : "r_dataframe"
+}
